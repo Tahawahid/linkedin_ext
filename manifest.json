@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Job Extractor",
+  "version": "1.5",
+  "description": "Extract job information from LinkedIn and save it as JSON.",
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": ["https://www.linkedin.com/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "linkedin.png",
+      "48": "linkedin.png",
+      "128": "linkedin.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/jobs/*", "https://www.linkedin.com/feed/jobs/*", "https://www.linkedin.com/my-items/saved-jobs/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
