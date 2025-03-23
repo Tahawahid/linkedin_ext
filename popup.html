@@ -7,27 +7,10 @@
   <body>
     <div class="container">
       <h1>LinkedIn Job Extractor</h1>
-
       <div class="button-group">
         <button id="loadJobs" class="primary-btn">Load Jobs</button>
-        <button id="saveJobs" class="secondary-btn" disabled>
-          Save Jobs as JSON
-        </button>
+        <button id="saveJobs" class="secondary-btn" disabled>Save Jobs as JSON</button>
       </div>
-
-      <div class="automation-controls">
-        <h2>Automation</h2>
-        <div class="button-group">
-          <button id="startAutomation" class="success-btn">
-            Start Automation
-          </button>
-          <button id="stopAutomation" class="danger-btn" disabled>
-            Stop Automation
-          </button>
-        </div>
-        <div class="status-bar" id="automationStatus">Automation: Stopped</div>
-      </div>
-
       <div class="status-bar" id="jobCount">Jobs extracted: 0</div>
       <div id="jobList" class="job-list-container"></div>
     </div>

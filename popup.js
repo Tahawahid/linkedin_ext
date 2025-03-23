@@ -1,34 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
   const loadJobsButton = document.getElementById("loadJobs");
   const saveJobsButton = document.getElementById("saveJobs");
-  const startAutomationButton = document.getElementById("startAutomation");
-  const stopAutomationButton = document.getElementById("stopAutomation");
   const jobCountElement = document.getElementById("jobCount");
-  const automationStatusElement = document.getElementById("automationStatus");
   const jobListElement = document.getElementById("jobList");
 
-  let isAutomationRunning = false;
-
-  function updateAutomationUI(isRunning) {
-    isAutomationRunning = isRunning;
-
-    if (isRunning) {
-      startAutomationButton.disabled = true;
-      stopAutomationButton.disabled = false;
-      automationStatusElement.textContent = "Automation: Running";
-      automationStatusElement.className =
-        "status-bar automation-status-running";
-    } else {
-      startAutomationButton.disabled = false;
-      stopAutomationButton.disabled = true;
-      automationStatusElement.textContent = "Automation: Stopped";
-      automationStatusElement.className =
-        "status-bar automation-status-stopped";
-    }
-  }
+  // Function to display jobs in the popup
   function displayJobs(jobs) {
     jobCountElement.textContent = `Jobs extracted: ${jobs.length}`;
 
+    // Clear previous job list
     jobListElement.innerHTML = "";
 
     if (jobs.length === 0) {
@@ -37,20 +17,22 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
+    // Create a table to display jobs
     const table = document.createElement("table");
     table.className = "job-table";
 
+    // Create table header
     const thead = document.createElement("thead");
     thead.innerHTML = `
       <tr>
         <th>Title</th>
         <th>Company</th>
         <th>Location</th>
-        <th>Page</th>
       </tr>
     `;
     table.appendChild(thead);
 
+    // Create table body
     const tbody = document.createElement("tbody");
     jobs.forEach((job) => {
       const row = document.createElement("tr");
@@ -58,7 +40,6 @@ document.addEventListener("DOMContentLoaded", function () {
         <td>${job.title}</td>
         <td>${job.company}</td>
         <td>${job.location}</td>
-        <td>${job.page || "N/A"}</td>
       `;
       tbody.appendChild(row);
     });
@@ -68,6 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
     saveJobsButton.disabled = false;
   }
 
+  // Function to check if current tab is a LinkedIn jobs page
   function isLinkedInJobsPage(url) {
     return (
       url.includes("linkedin.com/jobs") ||
@@ -76,43 +58,25 @@ document.addEventListener("DOMContentLoaded", function () {
     );
   }
 
-  function checkAutomationStatus() {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      const currentTab = tabs[0];
-
-      if (isLinkedInJobsPage(currentTab.url)) {
-        chrome.tabs.sendMessage(
-          currentTab.id,
-          { action: "getStatus" },
-          function (response) {
-            if (response && response.isRunning !== undefined) {
-              updateAutomationUI(response.isRunning);
-
-              if (response.isRunning) {
-                automationStatusElement.textContent = `Automation: Running (Page ${response.currentPage} of ${response.maxPages})`;
-              }
-            }
-          }
-        );
-      }
-    });
-  }
-
+  // Load jobs from storage when the "Load Jobs" button is clicked
   loadJobsButton.addEventListener("click", function () {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       const currentTab = tabs[0];
 
+      // Check if we're on a LinkedIn jobs page
       if (isLinkedInJobsPage(currentTab.url)) {
+        // First, try to trigger a manual extraction in the content script
         chrome.tabs.sendMessage(
           currentTab.id,
           { action: "extractJobs" },
           function (response) {
+            // After extraction (or if it fails), get jobs from storage
             setTimeout(() => {
               chrome.storage.local.get(["jobs"], function (result) {
                 const jobs = result.jobs || [];
                 displayJobs(jobs);
               });
-            }, 500);
+            }, 500); // Wait a bit for storage to update
           }
         );
       } else {
@@ -122,6 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // Save jobs as JSON when the "Save Jobs" button is clicked
   saveJobsButton.addEventListener("click", function () {
     chrome.storage.local.get(["jobs"], function (result) {
       const jobs = result.jobs || [];
@@ -130,88 +95,30 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
+      // Create a blob with the JSON data
       const blob = new Blob([JSON.stringify(jobs, null, 2)], {
         type: "application/json",
       });
       const url = URL.createObjectURL(blob);
 
+      // Create a link to download the JSON file
       const a = document.createElement("a");
       a.href = url;
       a.download = "linkedin_jobs.json";
       document.body.appendChild(a);
       a.click();
 
+      // Clean up
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     });
   });
 
-  startAutomationButton.addEventListener("click", function () {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      const currentTab = tabs[0];
-
-      if (isLinkedInJobsPage(currentTab.url)) {
-        chrome.tabs.sendMessage(
-          currentTab.id,
-          { action: "startAutomation" },
-          function (response) {
-            if (response && response.success) {
-              updateAutomationUI(true);
-            }
-          }
-        );
-      } else {
-        jobListElement.innerHTML =
-          '<div class="alert alert-warning">Please navigate to a LinkedIn Jobs page first.</div>';
-      }
-    });
-  });
-
-  stopAutomationButton.addEventListener("click", function () {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      const currentTab = tabs[0];
-
-      if (isLinkedInJobsPage(currentTab.url)) {
-        chrome.tabs.sendMessage(
-          currentTab.id,
-          { action: "stopAutomation" },
-          function (response) {
-            if (response && response.success) {
-              updateAutomationUI(false);
-            }
-          }
-        );
-      }
-    });
-  });
-
-  chrome.runtime.onMessage.addListener(function (
-    message,
-    sender,
-    sendResponse
-  ) {
-    if (message.action === "automationStarted") {
-      updateAutomationUI(true);
-    } else if (message.action === "automationStopped") {
-      updateAutomationUI(false);
-    } else if (message.action === "updateJobCount") {
-      jobCountElement.textContent = `Jobs extracted: ${message.count}`;
-
-      if (!jobListElement.querySelector(".no-jobs")) {
-        chrome.storage.local.get(["jobs"], function (result) {
-          const jobs = result.jobs || [];
-          displayJobs(jobs);
-        });
-      }
-    }
-  });
-
+  // Check if there are already jobs in storage when the popup is opened
   chrome.storage.local.get(["jobs"], function (result) {
     const jobs = result.jobs || [];
     if (jobs.length > 0) {
       displayJobs(jobs);
     }
   });
-
-  checkAutomationStatus();
 });

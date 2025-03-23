@@ -25,13 +25,6 @@ h1 {
   padding-bottom: 8px;
 }
 
-h2 {
-  font-size: 16px;
-  margin-top: 16px;
-  margin-bottom: 12px;
-  color: #333;
-}
-
 .button-group {
   display: flex;
   gap: 10px;
@@ -66,24 +59,6 @@ button {
   background-color: #478636;
 }
 
-.success-btn {
-  background-color: #5cac44;
-  color: white;
-}
-
-.success-btn:hover {
-  background-color: #478636;
-}
-
-.danger-btn {
-  background-color: #d11124;
-  color: white;
-}
-
-.danger-btn:hover {
-  background-color: #a50d1c;
-}
-
 button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
@@ -96,14 +71,6 @@ button:disabled {
   border-radius: 4px;
   font-size: 14px;
   margin-bottom: 16px;
-}
-
-.automation-controls {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 12px;
-  margin-bottom: 16px;
-  background-color: #f9f9f9;
 }
 
 .job-list-container {
@@ -155,37 +122,8 @@ button:disabled {
   border: 1px solid #cfe2ff;
 }
 
-.alert-success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.alert-danger {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
 .no-jobs {
   padding: 16px;
   text-align: center;
   color: #666;
-}
-
-.automation-status-running {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.automation-status-stopped {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-.page-info {
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
-  font-style: italic;
 }
