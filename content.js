@@ -61,6 +61,87 @@ function extractJobs() {
   return jobs;
 }
 
+// Function to extract job details from the current job details page
+function extractJobDetails() {
+  try {
+    // Check if we're on a job details page
+    const jobDetailsContainer = document.querySelector(
+      ".jobs-details__main-content"
+    );
+
+    if (!jobDetailsContainer) {
+      console.log("No job details container found on this page");
+      return null;
+    }
+
+    // Get the job ID from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const jobId =
+      urlParams.get("currentJobId") ||
+      window.location.pathname.split("/").pop().replace(/\D/g, "");
+
+    if (!jobId) {
+      console.log("Could not extract job ID from URL");
+      return null;
+    }
+
+    // Extract basic job information for reference
+    const jobTitle =
+      document
+        .querySelector(".job-details-jobs-unified-top-card__job-title")
+        ?.innerText.trim() || "N/A";
+    const companyName =
+      document
+        .querySelector(".job-details-jobs-unified-top-card__company-name")
+        ?.innerText.trim() || "N/A";
+    const location =
+      document
+        .querySelector(".job-details-jobs-unified-top-card__bullet")
+        ?.innerText.trim() || "N/A";
+
+    // Get the entire HTML content of the job details section
+    const detailsHTML = jobDetailsContainer.outerHTML;
+
+    const jobDetails = {
+      id: jobId,
+      title: jobTitle,
+      company: companyName,
+      location: location,
+      detailsHTML: detailsHTML,
+      extractedAt: new Date().toISOString(),
+    };
+
+    console.log(`Extracted details for job: ${jobTitle} at ${companyName}`);
+
+    // Save the job details to storage
+    saveJobDetailsToStorage(jobDetails);
+
+    return jobDetails;
+  } catch (error) {
+    console.error("Error extracting job details:", error);
+    return null;
+  }
+}
+
+// Function to save job details to chrome.storage.local
+function saveJobDetailsToStorage(jobDetails) {
+  if (!jobDetails || !jobDetails.id) {
+    console.log("No valid job details to save");
+    return;
+  }
+
+  chrome.storage.local.get(["jobDetails"], (result) => {
+    const existingDetails = result.jobDetails || {};
+
+    // Add or update the job details using the job ID as the key
+    existingDetails[jobDetails.id] = jobDetails;
+
+    chrome.storage.local.set({ jobDetails: existingDetails }, () => {
+      console.log(`Saved details for job ID: ${jobDetails.id}`);
+    });
+  });
+}
+
 // Function to save jobs to chrome.storage.local
 function saveJobsToStorage(newJobs) {
   if (newJobs.length === 0) {
@@ -87,33 +168,66 @@ function saveJobsToStorage(newJobs) {
 // Function to manually trigger job extraction
 function manualExtract() {
   console.log("Manual extraction triggered");
-  const jobs = extractJobs();
-  if (jobs.length > 0) {
-    saveJobsToStorage(jobs);
-    console.log(`Manually extracted ${jobs.length} jobs`);
+
+  // Check if we're on a job details page first
+  const jobDetailsContainer = document.querySelector(
+    ".jobs-details__main-content"
+  );
+
+  if (jobDetailsContainer) {
+    // We're on a job details page, extract the details
+    const details = extractJobDetails();
+    if (details) {
+      console.log("Successfully extracted job details");
+      return { success: true, type: "details" };
+    }
   } else {
-    console.log("No jobs found during manual extraction");
+    // We're on a job listings page, extract the jobs
+    const jobs = extractJobs();
+    if (jobs.length > 0) {
+      saveJobsToStorage(jobs);
+      console.log(`Manually extracted ${jobs.length} jobs`);
+      return { success: true, type: "listings" };
+    } else {
+      console.log("No jobs found during manual extraction");
+    }
   }
+
+  return { success: false };
 }
 
 // Extract jobs from the initial page load
 console.log("LinkedIn Job Extractor: Content script loaded");
 setTimeout(() => {
-  const initialJobs = extractJobs();
-  if (initialJobs.length > 0) {
-    saveJobsToStorage(initialJobs);
-    console.log(`Extracted ${initialJobs.length} jobs from initial page load`);
+  // Check if we're on a job details page
+  const jobDetailsContainer = document.querySelector(
+    ".jobs-details__main-content"
+  );
+
+  if (jobDetailsContainer) {
+    // We're on a job details page, extract the details
+    extractJobDetails();
   } else {
-    console.log("No jobs found on initial page load");
+    // We're on a job listings page, extract the jobs
+    const initialJobs = extractJobs();
+    if (initialJobs.length > 0) {
+      saveJobsToStorage(initialJobs);
+      console.log(
+        `Extracted ${initialJobs.length} jobs from initial page load`
+      );
+    } else {
+      console.log("No jobs found on initial page load");
+    }
   }
 }, 2000); // Wait 2 seconds for the page to fully load
 
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "extractJobs") {
-    manualExtract();
-    sendResponse({ success: true });
+    const result = manualExtract();
+    sendResponse(result);
   }
+  return true;
 });
 
 // Observe the jobs list for changes (e.g., when new jobs are loaded)

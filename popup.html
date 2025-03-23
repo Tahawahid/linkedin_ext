@@ -7,12 +7,35 @@
   <body>
     <div class="container">
       <h1>LinkedIn Job Extractor</h1>
-      <div class="button-group">
-        <button id="loadJobs" class="primary-btn">Load Jobs</button>
-        <button id="saveJobs" class="secondary-btn" disabled>Save Jobs as JSON</button>
+
+      <div class="tabs">
+        <button id="listingsTab" class="tab-button active">Job Listings</button>
+        <button id="detailsTab" class="tab-button">Job Details</button>
       </div>
-      <div class="status-bar" id="jobCount">Jobs extracted: 0</div>
-      <div id="jobList" class="job-list-container"></div>
+
+      <div id="listingsPanel" class="tab-panel active">
+        <div class="button-group">
+          <button id="loadJobs" class="primary-btn">Load Jobs</button>
+          <button id="saveJobs" class="secondary-btn" disabled>
+            Save Jobs as JSON
+          </button>
+        </div>
+        <div class="status-bar" id="jobCount">Jobs extracted: 0</div>
+        <div id="jobList" class="job-list-container"></div>
+      </div>
+
+      <div id="detailsPanel" class="tab-panel">
+        <div class="button-group">
+          <button id="extractDetails" class="primary-btn">
+            Extract Current Job Details
+          </button>
+          <button id="saveDetails" class="secondary-btn" disabled>
+            Save Details as JSON
+          </button>
+        </div>
+        <div class="status-bar" id="detailsCount">Job details extracted: 0</div>
+        <div id="jobDetailsList" class="job-list-container"></div>
+      </div>
     </div>
     <script src="popup.js"></script>
   </body>
